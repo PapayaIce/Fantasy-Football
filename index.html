@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yahoo Fantasy Football Squad Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .bg-dark-card { background-color: #1e293b; }
+    .bg-dark-main { background-color: #0f172a; }
+  </style>
+</head>
+<body class="bg-dark-main text-slate-100 min-h-screen font-sans pb-12">
+
+  <!-- Navigation Bar -->
+  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-purple-600 text-white font-bold p-2.5 rounded-lg text-xl shadow-lg shadow-purple-900/50">
+          🏈
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-white tracking-wide">Yahoo Fantasy Squad Hub</h1>
+          <p class="text-xs text-slate-400">Weekly Matchups, Projections & Predictions</p>
+        </div>
+      </div>
+      
+      <!-- Team Selector Tabs -->
+      <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700/60 shadow-inner w-full sm:w-auto overflow-x-auto">
+        <button onclick="switchTeam('koa_klaw')" id="tab-koa_klaw" class="team-tab px-4 py-2 text-sm font-semibold rounded-lg transition-all text-white bg-purple-600 shadow-sm whitespace-nowrap">
+          Koa Klaw
+        </button>
+        <button onclick="switchTeam('cat_attack')" id="tab-cat_attack" class="team-tab px-4 py-2 text-sm font-semibold rounded-lg transition-all text-slate-400 hover:text-white whitespace-nowrap">
+          The Cat Attack
+        </button>
+        <button onclick="switchTeam('salt')" id="tab-salt" class="team-tab px-4 py-2 text-sm font-semibold rounded-lg transition-all text-slate-400 hover:text-white whitespace-nowrap">
+          Salt
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
+
+    <!-- Active Team Header Banner -->
+    <div class="bg-gradient-to-r from-purple-900/40 via-indigo-900/40 to-slate-800 border border-slate-700/80 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="inline-block px-3 py-1 bg-purple-500/20 text-purple-300 text-xs font-semibold rounded-full border border-purple-500/30 mb-2">
+            Yahoo Fantasy League
+          </div>
+          <h2 id="current-team-title" class="text-3xl font-extrabold text-white">Koa Klaw</h2>
+          <p id="current-team-desc" class="text-slate-300 text-sm mt-1">High-ceiling starters with young dynasty potential.</p>
+        </div>
+        
+        <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-700/50 px-5 py-3 rounded-xl shadow-inner">
+          <div class="text-center px-2">
+            <span class="block text-xs text-slate-400 uppercase tracking-wider">Projected Pts</span>
+            <span id="stat-projected" class="text-2xl font-bold text-purple-400">128.4</span>
+          </div>
+          <div class="h-8 w-px bg-slate-700"></div>
+          <div class="text-center px-2">
+            <span class="block text-xs text-slate-400 uppercase tracking-wider">Total Players</span>
+            <span id="stat-count" class="text-2xl font-bold text-white">15</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projection Chart Section -->
+    <div class="bg-dark-card border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+        Weekly Projected Points Breakdown
+      </h3>
+      <div class="relative h-64 sm:h-80 w-full">
+        <canvas id="projectionsChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Filter & Search Controls -->
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-dark-card border border-slate-800 p-4 rounded-xl">
+      <div class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+        <span class="text-xs text-slate-400 uppercase font-semibold mr-2">Filter:</span>
+        <button onclick="filterPosition('ALL')" class="pos-filter px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 text-white">All</button>
+        <button onclick="filterPosition('QB')" class="pos-filter px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white">QB</button>
+        <button onclick="filterPosition('RB')" class="pos-filter px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white">RB</button>
+        <button onclick="filterPosition('WR')" class="pos-filter px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white">WR</button>
+        <button onclick="filterPosition('TE')" class="pos-filter px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white">TE</button>
+        <button onclick="filterPosition('DEF/K')" class="pos-filter px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white">DEF / K</button>
+      </div>
+      
+      <div class="w-full sm:w-64">
+        <input type="text" id="searchInput" onkeyup="searchPlayers()" placeholder="Search player name..." class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+      </div>
+    </div>
+
+    <!-- Player Roster Table -->
+    <div class="bg-dark-card border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-300">
+          <thead class="bg-slate-900/90 text-xs uppercase text-slate-400 font-semibold border-b border-slate-800">
+            <tr>
+              <th class="py-3.5 px-4">Player</th>
+              <th class="py-3.5 px-4">Position</th>
+              <th class="py-3.5 px-4">Opponent / Matchup</th>
+              <th class="py-3.5 px-4 text-center">Matchup Difficulty</th>
+              <th class="py-3.5 px-4 text-center">Proj Pts</th>
+              <th class="py-3.5 px-4">Key Insight / Prediction</th>
+            </tr>
+          </thead>
+          <tbody id="roster-tbody" class="divide-y divide-slate-800/60">
+            <!-- Dynamically Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Database of the 3 teams
+    const teamsData = {
+      koa_klaw: {
+        title: "Koa Klaw",
+        description: "Balanced lineup featuring explosive young receivers and strong dual RBs.",
+        players: [
+          { name: "Justin Herbert", pos: "QB", team: "LAC", opp: "vs KC", difficulty: "Tough", diffColor: "bg-red-500/20 text-red-400 border-red-500/30", proj: 18.2, note: "High volume potential in a division rivalry script." },
+          { name: "James Cook", pos: "RB", team: "BUF", opp: "@ MIA", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 15.6, note: "Great receiving floor against a fast-paced offense." },
+          { name: "De'Von Achane", pos: "RB", team: "MIA", opp: "vs BUF", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 16.1, note: "Home run threat on any touches in high-scoring game." },
+          { name: "Ladd McConkey", pos: "WR", team: "LAC", opp: "vs KC", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 12.4, note: "Top slot target for Herbert with solid PPR upside." },
+          { name: "Rashee Rice", pos: "WR", team: "KC", opp: "@ LAC", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 14.8, note: "High targeted weapon in short passing games." },
+          { name: "Harold Fannin Jr.", pos: "TE", team: "NCAA", opp: "vs Prospect", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 11.2, note: "Dynamic college tight end with elite target share." },
+          { name: "DJ Moore", pos: "WR", team: "CHI", opp: "vs GB", difficulty: "Tough", diffColor: "bg-red-500/20 text-red-400 border-red-500/30", proj: 13.0, note: "Primary target, but faces tough secondary coverage." },
+          { name: "Eddy Piñeiro", pos: "K", team: "CAR", opp: "@ TB", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 7.5, note: "Reliable kicker in close division matchups." },
+          { name: "Texans Defense", pos: "DEF", team: "HOU", opp: "vs IND", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 8.5, note: "Pass rush upside with high turnover potential." },
+          { name: "Rhamondre Stevenson", pos: "RB", team: "NE", opp: "@ NYJ", difficulty: "Tough", diffColor: "bg-red-500/20 text-red-400 border-red-500/30", proj: 10.8, note: "Heavy workload back facing a stout front seven." },
+          { name: "Luther Burden III", pos: "WR", team: "NCAA", opp: "vs Prospect", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 13.5, note: "Top college playmaker with huge play ability." },
+          { name: "Chris Godwin Jr.", pos: "WR", team: "TB", opp: "vs CAR", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 12.9, note: "High floor in PPR leagues operating out of the slot." },
+          { name: "Jared Goff", pos: "QB", team: "DET", opp: "@ MIN", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 17.5, note: "High floor in a high-powered Lions offense." },
+          { name: "Chris Rodriguez Jr.", pos: "RB", team: "WAS", opp: "vs PHI", difficulty: "Tough", diffColor: "bg-red-500/20 text-red-400 border-red-500/30", proj: 6.2, note: "Power back role in goal-line situations." },
+          { name: "Tre Tucker", pos: "WR", team: "LV", opp: "@ DEN", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 7.8, note: "Deep threat upside for big play potential." }
+        ]
+      },
+      cat_attack: {
+        title: "The Cat Attack",
+        description: "Powerhouse roster loaded with elite RB talent and top-tier receivers.",
+        players: [
+          { name: "Joe Burrow", pos: "QB", team: "CIN", opp: "vs BAL", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 20.4, note: "High pass volume expected in division battle." },
+          { name: "Bijan Robinson", pos: "RB", team: "ATL", opp: "vs NO", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 18.2, note: "Elite workhorse role with massive receiving ceiling." },
+          { name: "De'Von Achane", pos: "RB", team: "MIA", opp: "vs BUF", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 16.1, note: "Speed demon with top explosive potential." },
+          { name: "Nico Collins", pos: "WR", team: "HOU", opp: "@ IND", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 16.8, note: "Alpha receiver clear #1 option for Stroud." },
+          { name: "Ladd McConkey", pos: "WR", team: "LAC", opp: "vs KC", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 12.4, note: "Reliable PPR floor in key target spots." },
+          { name: "Harold Fannin Jr.", pos: "TE", team: "NCAA", opp: "vs Prospect", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 11.2, note: "Elite target earner in college offense." },
+          { name: "Breece Hall", pos: "RB", team: "NYJ", opp: "vs NE", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 17.5, note: "Dual-threat RB with RB1 overall upside." },
+          { name: "DJ Moore", pos: "WR", team: "CHI", opp: "vs GB", difficulty: "Tough", diffColor: "bg-red-500/20 text-red-400 border-red-500/30", proj: 13.0, note: "Capable of breaking big plays after catch." },
+          { name: "Jakobi Meyers", pos: "WR", team: "LV", opp: "@ DEN", difficulty: "Tough", diffColor: "bg-red-500/20 text-red-400 border-red-500/30", proj: 10.5, note: "Dependable chain-mover with safe floor." },
+          { name: "Steelers Defense", pos: "DEF", team: "PIT", opp: "@ CLE", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 9.1, note: "Elite pass rush vs division rival." },
+          { name: "Terry McLaurin", pos: "WR", team: "WAS", opp: "vs PHI", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 13.8, note: "Clear WR1 with strong downfield chemistry." },
+          { name: "DK Metcalf", pos: "WR", team: "SEA", opp: "@ ARI", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 14.5, note: "Red-zone monster with high touchdown upside." },
+          { name: "Tony Pollard", pos: "RB", team: "TEN", opp: "vs JAX", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 12.2, note: "Solid volume in both run and pass game." },
+          { name: "Baker Mayfield", pos: "QB", team: "TB", opp: "vs CAR", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 18.0, note: "Great fantasy matchup at home." },
+          { name: "Courtland Sutton", pos: "WR", team: "DEN", opp: "vs LV", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 11.4, note: "Top end-zone target for Broncos." },
+          { name: "RJ Harvey", pos: "RB", team: "NCAA", opp: "vs Prospect", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 14.0, note: "Dynamic college back with elite explosive stats." }
+        ]
+      },
+      salt: {
+        title: "Salt",
+        description: "Heavy-hitting roster featuring elite superstars and explosive upside.",
+        players: [
+          { name: "Jayden Daniels", pos: "QB", team: "WAS", opp: "vs PHI", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 21.5, note: "Elite rushing floor gives monster fantasy potential." },
+          { name: "Ashton Jeanty", pos: "RB", team: "NCAA", opp: "vs Prospect", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 22.0, note: "Dominant college runner with astronomical stats." },
+          { name: "Derrick Henry", pos: "RB", team: "BAL", opp: "@ CIN", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 17.8, note: "Goal-line machine in explosive Ravens offense." },
+          { name: "Puka Nacua", pos: "WR", team: "LAR", opp: "@ SF", difficulty: "Tough", diffColor: "bg-red-500/20 text-red-400 border-red-500/30", proj: 16.2, note: "Target magnet regardless of matchup." },
+          { name: "Garrett Wilson", pos: "WR", team: "NYJ", opp: "vs NE", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 15.4, note: "High target share with elite route running." },
+          { name: "George Kittle", pos: "TE", team: "SF", opp: "vs LAR", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 13.1, note: "YAC machine with top TE1 ceiling." },
+          { name: "Breece Hall", pos: "RB", team: "NYJ", opp: "vs NE", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 17.5, note: "Explosive multi-touchdown upside." },
+          { name: "Luther Burden III", pos: "WR", team: "NCAA", opp: "vs Prospect", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 13.5, note: "Electrifying wideout with monster speed." },
+          { name: "Will Reichard", pos: "K", team: "MIN", opp: "vs DET", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 8.0, note: "Accurate kicker in high scoring game script." },
+          { name: "Lions Defense", pos: "DEF", team: "DET", opp: "@ MIN", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 7.8, note: "Stiff run defense with turnover upside." },
+          { name: "DK Metcalf", pos: "WR", team: "SEA", opp: "@ ARI", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 14.5, note: "Big play threat against suspect secondary." },
+          { name: "Jordan Addison", pos: "WR", team: "MIN", opp: "vs DET", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 11.8, note: "Dangerous speed receiver on indoor turf." },
+          { name: "Blake Corum", pos: "RB", team: "LAR", opp: "@ SF", difficulty: "Tough", diffColor: "bg-red-500/20 text-red-400 border-red-500/30", proj: 7.0, note: "Quality handcuff with standalone goal line role." },
+          { name: "Rachaad White", pos: "RB", team: "TB", opp: "vs CAR", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 13.2, note: "Great receiving floor out of the backfield." },
+          { name: "Jalen Coker", pos: "WR", team: "CAR", opp: "@ TB", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 6.8, note: "Emerging target option with upside." },
+          { name: "Jared Goff", pos: "QB", team: "DET", opp: "@ MIN", difficulty: "Moderate", diffColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", proj: 17.5, note: "Solid QB option with efficient passing output." },
+          { name: "Dalton Schultz", pos: "TE", team: "HOU", opp: "@ IND", difficulty: "Easy", diffColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", proj: 8.9, note: "Reliable safety valve in red zone." }
+        ]
+      }
+    };
+
+    let activeTeamKey = 'koa_klaw';
+    let currentPosFilter = 'ALL';
+    let chartInstance = null;
+
+    // Initialize Page
+    window.onload = function() {
+      renderTeam(activeTeamKey);
+    };
+
+    // Switch Teams
+    function switchTeam(teamKey) {
+      activeTeamKey = teamKey;
+      
+      // Update UI Tabs
+      document.querySelectorAll('.team-tab').forEach(tab => {
+        tab.classList.remove('bg-purple-600', 'text-white', 'shadow-sm');
+        tab.classList.add('text-slate-400');
+      });
+      const selectedTab = document.getElementById(`tab-${teamKey}`);
+      selectedTab.classList.add('bg-purple-600', 'text-white', 'shadow-sm');
+      selectedTab.classList.remove('text-slate-400');
+
+      renderTeam(teamKey);
+    }
+
+    // Render Data
+    function renderTeam(teamKey) {
+      const team = teamsData[teamKey];
+      
+      // Header Updates
+      document.getElementById('current-team-title').innerText = team.title;
+      document.getElementById('current-team-desc').innerText = team.description;
+      
+      // Calculate Total Projected Points
+      const totalProj = team.players.reduce((sum, p) => sum + p.proj, 0).toFixed(1);
+      document.getElementById('stat-projected').innerText = totalProj;
+      document.getElementById('stat-count').innerText = team.players.length;
+
+      // Filter & Search Reset
+      document.getElementById('searchInput').value = '';
+      currentPosFilter = 'ALL';
+      updateFilterButtons();
+
+      // Render Table & Chart
+      renderRosterTable(team.players);
+      renderChart(team.players);
+    }
+
+    // Render Table
+    function renderRosterTable(players) {
+      const tbody = document.getElementById('roster-tbody');
+      tbody.innerHTML = '';
+
+      const searchVal = document.getElementById('searchInput').value.toLowerCase();
+
+      players.forEach(p => {
+        // Filter match logic
+        const matchesPos = currentPosFilter === 'ALL' || 
+          (currentPosFilter === 'DEF/K' ? (p.pos === 'DEF' || p.pos === 'K') : p.pos === currentPosFilter);
+        
+        const matchesSearch = p.name.toLowerCase().includes(searchVal);
+
+        if (matchesPos && matchesSearch) {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-slate-800/40 transition-colors';
+          row.innerHTML = `
+            <td class="py-3.5 px-4 font-semibold text-white">
+              ${p.name}
+              <span class="text-xs text-slate-400 font-normal ml-1">(${p.team})</span>
+            </td>
+            <td class="py-3.5 px-4">
+              <span class="px-2 py-0.5 text-xs font-bold rounded bg-slate-800 border border-slate-700 text-purple-300">
+                ${p.pos}
+              </span>
+            </td>
+            <td class="py-3.5 px-4 text-slate-300">${p.opp}</td>
+            <td class="py-3.5 px-4 text-center">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${p.diffColor}">
+                ${p.difficulty}
+              </span>
+            </td>
+            <td class="py-3.5 px-4 text-center font-bold text-white">${p.proj}</td>
+            <td class="py-3.5 px-4 text-xs text-slate-400 max-w-xs">${p.note}</td>
+          `;
+          tbody.appendChild(row);
+        }
+      });
+    }
+
+    // Filter Buttons UI
+    function filterPosition(pos) {
+      currentPosFilter = pos;
+      updateFilterButtons();
+      renderRosterTable(teamsData[activeTeamKey].players);
+    }
+
+    function updateFilterButtons() {
+      document.querySelectorAll('.pos-filter').forEach(btn => {
+        if(btn.innerText === currentPosFilter || (currentPosFilter === 'DEF/K' && btn.innerText === 'DEF / K')) {
+          btn.classList.add('bg-purple-600', 'text-white');
+          btn.classList.remove('bg-slate-800', 'text-slate-300');
+        } else {
+          btn.classList.remove('bg-purple-600', 'text-white');
+          btn.classList.add('bg-slate-800', 'text-slate-300');
+        }
+      });
+    }
+
+    function searchPlayers() {
+      renderRosterTable(teamsData[activeTeamKey].players);
+    }
+
+    // Chart.js Rendering
+    function renderChart(players) {
+      const ctx = document.getElementById('projectionsChart').getContext('2d');
+      
+      // Sort Top 8 Players by Projection
+      const topPlayers = [...players].sort((a, b) => b.proj - a.proj).slice(0, 8);
+      
+      const labels = topPlayers.map(p => p.name);
+      const data = topPlayers.map(p => p.proj);
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Projected Fantasy Points',
+            data: data,
+            backgroundColor: 'rgba(147, 51, 234, 0.6)',
+            borderColor: 'rgba(147, 51, 234, 1)',
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#94a3b8' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#cbd5e1', font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
